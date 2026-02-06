@@ -1,0 +1,373 @@
+{
+  "metadata": {
+    "title": "Java/Spring Boot Security Patterns",
+    "description": "Security patterns and anti-patterns for Java/Spring Boot applications",
+    "version": "1.0",
+    "last_updated": "2026-02-06"
+  },
+  "patterns": [
+    {
+      "pattern_id": "AUTH-001",
+      "name": "Spring Security Configuration",
+      "type": "authentication",
+      "category": "good_pattern",
+      "description": "Proper Spring Security configuration with authentication",
+      "regex_patterns": [
+        "@EnableWebSecurity",
+        "WebSecurityConfigurerAdapter",
+        "SecurityFilterChain",
+        "AuthenticationManager"
+      ],
+      "code_example": "@Configuration\n@EnableWebSecurity\npublic class SecurityConfig extends WebSecurityConfigurerAdapter {\n    @Override\n    protected void configure(HttpSecurity http) throws Exception {\n        http.authorizeRequests()\n            .anyRequest().authenticated()\n            .and().formLogin();\n    }\n}",
+      "related_controls": ["AC-2", "IA-2"],
+      "confidence": 0.9
+    },
+    {
+      "pattern_id": "AUTH-002",
+      "name": "Multi-Factor Authentication",
+      "type": "authentication",
+      "category": "good_pattern",
+      "description": "MFA implementation using TOTP",
+      "regex_patterns": [
+        "MfaProvider",
+        "TwoFactorAuth",
+        "GoogleAuthenticator",
+        "OtpService",
+        "TotpGenerator"
+      ],
+      "code_example": "@Service\npublic class MfaService {\n    private final GoogleAuthenticator gAuth = new GoogleAuthenticator();\n    \n    public boolean validateCode(String secret, int code) {\n        return gAuth.authorize(secret, code);\n    }\n}",
+      "related_controls": ["IA-2(1)", "IA-2(2)"],
+      "confidence": 1.0
+    },
+    {
+      "pattern_id": "AUTH-003",
+      "name": "Hardcoded Credentials",
+      "type": "authentication",
+      "category": "anti_pattern",
+      "description": "Hardcoded passwords or API keys in source code",
+      "regex_patterns": [
+        "password\\s*=\\s*[\"'][^\"']+[\"']",
+        "apiKey\\s*=\\s*[\"'][^\"']+[\"']",
+        "secret\\s*=\\s*[\"'][^\"']+[\"']",
+        "private_key\\s*=\\s*[\"'][^\"']+[\"']"
+      ],
+      "code_example": "// BAD: Hardcoded password\nString password = \"MySecretPassword123\";",
+      "related_controls": ["IA-5", "SC-12"],
+      "confidence": 0.95,
+      "severity": "critical"
+    },
+    {
+      "pattern_id": "AUTHZ-001",
+      "name": "Role-Based Access Control",
+      "type": "authorization",
+      "category": "good_pattern",
+      "description": "RBAC implementation with Spring Security",
+      "regex_patterns": [
+        "@PreAuthorize",
+        "@Secured",
+        "@RolesAllowed",
+        "hasRole\\(",
+        "hasAuthority\\("
+      ],
+      "code_example": "@PreAuthorize(\"hasRole('ADMIN')\")\n@GetMapping(\"/admin\")\npublic String adminPage() {\n    return \"admin\";\n}",
+      "related_controls": ["AC-3", "AC-6"],
+      "confidence": 0.9
+    },
+    {
+      "pattern_id": "AUTHZ-002",
+      "name": "Missing Authorization Check",
+      "type": "authorization",
+      "category": "anti_pattern",
+      "description": "Endpoint without authorization annotation",
+      "regex_patterns": [
+        "@RequestMapping.*\\n(?!.*@PreAuthorize)(?!.*@Secured)",
+        "@GetMapping.*\\n(?!.*@PreAuthorize)(?!.*@Secured)",
+        "@PostMapping.*\\n(?!.*@PreAuthorize)(?!.*@Secured)"
+      ],
+      "code_example": "// BAD: No authorization check\n@GetMapping(\"/sensitive-data\")\npublic Data getData() {\n    return sensitiveData;\n}",
+      "related_controls": ["AC-3", "AC-6"],
+      "confidence": 0.8,
+      "severity": "high"
+    },
+    {
+      "pattern_id": "CRYPTO-001",
+      "name": "Strong Encryption (AES)",
+      "type": "encryption",
+      "category": "good_pattern",
+      "description": "Use of AES encryption algorithm",
+      "regex_patterns": [
+        "AES/GCM",
+        "AES/CBC",
+        "Cipher\\.getInstance\\([\"']AES",
+        "KeyGenerator\\.getInstance\\([\"']AES"
+      ],
+      "code_example": "Cipher cipher = Cipher.getInstance(\"AES/GCM/NoPadding\");\nKeyGenerator keyGen = KeyGenerator.getInstance(\"AES\");\nkeyGen.init(256);",
+      "related_controls": ["SC-13", "SC-28"],
+      "confidence": 0.95
+    },
+    {
+      "pattern_id": "CRYPTO-002",
+      "name": "Weak Encryption",
+      "type": "encryption",
+      "category": "anti_pattern",
+      "description": "Use of weak or deprecated encryption",
+      "regex_patterns": [
+        "\\bDES\\b",
+        "\\bMD5\\b",
+        "\\bSHA1\\b",
+        "\\bRC4\\b",
+        "Cipher\\.getInstance\\([\"']DES"
+      ],
+      "code_example": "// BAD: Weak encryption\nCipher cipher = Cipher.getInstance(\"DES\");",
+      "related_controls": ["SC-13"],
+      "confidence": 1.0,
+      "severity": "critical"
+    },
+    {
+      "pattern_id": "CRYPTO-003",
+      "name": "TLS/HTTPS Configuration",
+      "type": "secure_communication",
+      "category": "good_pattern",
+      "description": "Proper TLS/HTTPS configuration",
+      "regex_patterns": [
+        "requiresSecure\\(\\)",
+        "\\.https\\(\\)",
+        "SSLContext",
+        "TLSv1\\.2",
+        "TLSv1\\.3"
+      ],
+      "code_example": "http.requiresChannel()\n    .anyRequest()\n    .requiresSecure();",
+      "related_controls": ["SC-8", "SC-8(1)"],
+      "confidence": 0.9
+    },
+    {
+      "pattern_id": "AUDIT-001",
+      "name": "Security Audit Logging",
+      "type": "audit",
+      "category": "good_pattern",
+      "description": "Comprehensive audit logging implementation",
+      "regex_patterns": [
+        "@Audit",
+        "auditLogger",
+        "securityAudit",
+        "AuditEvent",
+        "log\\.audit\\("
+      ],
+      "code_example": "@Audit(eventType = \"USER_LOGIN\")\npublic void login(String username) {\n    auditLogger.log(\"User login: \" + username);\n}",
+      "related_controls": ["AU-2", "AU-3", "AU-12"],
+      "confidence": 0.9
+    },
+    {
+      "pattern_id": "AUDIT-002",
+      "name": "Sensitive Data in Logs",
+      "type": "logging",
+      "category": "anti_pattern",
+      "description": "Logging sensitive information",
+      "regex_patterns": [
+        "log.*password",
+        "log.*secret",
+        "log.*token",
+        "log.*apiKey",
+        "log.*creditCard"
+      ],
+      "code_example": "// BAD: Logging password\nlog.info(\"User password: \" + password);",
+      "related_controls": ["AU-9", "SC-28"],
+      "confidence": 0.85,
+      "severity": "high"
+    },
+    {
+      "pattern_id": "SESSION-001",
+      "name": "Secure Session Management",
+      "type": "session_management",
+      "category": "good_pattern",
+      "description": "Proper session configuration",
+      "regex_patterns": [
+        "sessionManagement\\(\\)",
+        "maximumSessions\\(",
+        "sessionFixation\\(\\)\\.none\\(\\)",
+        "invalidateHttpSession\\(true\\)"
+      ],
+      "code_example": "http.sessionManagement()\n    .maximumSessions(1)\n    .maxSessionsPreventsLogin(true);",
+      "related_controls": ["AC-12", "SC-23"],
+      "confidence": 0.85
+    },
+    {
+      "pattern_id": "INPUT-001",
+      "name": "Input Validation",
+      "type": "input_validation",
+      "category": "good_pattern",
+      "description": "Proper input validation using annotations",
+      "regex_patterns": [
+        "@Valid",
+        "@Validated",
+        "@NotNull",
+        "@Size",
+        "@Pattern",
+        "validator\\.validate"
+      ],
+      "code_example": "@PostMapping(\"/user\")\npublic User createUser(@Valid @RequestBody User user) {\n    return userService.save(user);\n}",
+      "related_controls": ["SI-10"],
+      "confidence": 0.85
+    },
+    {
+      "pattern_id": "INPUT-002",
+      "name": "SQL Injection Risk",
+      "type": "input_validation",
+      "category": "anti_pattern",
+      "description": "Potential SQL injection vulnerability",
+      "regex_patterns": [
+        "Statement\\.execute\\(",
+        "createQuery\\([\"'].*\\+",
+        "executeQuery\\([\"'].*\\+",
+        "createNativeQuery\\([\"'].*\\+"
+      ],
+      "code_example": "// BAD: SQL injection risk\nString query = \"SELECT * FROM users WHERE id = \" + userId;\nstatement.execute(query);",
+      "related_controls": ["SI-10"],
+      "confidence": 0.9,
+      "severity": "critical"
+    },
+    {
+      "pattern_id": "ERROR-001",
+      "name": "Centralized Error Handling",
+      "type": "error_handling",
+      "category": "good_pattern",
+      "description": "Proper exception handling with @ControllerAdvice",
+      "regex_patterns": [
+        "@ExceptionHandler",
+        "@ControllerAdvice",
+        "@RestControllerAdvice",
+        "GlobalExceptionHandler"
+      ],
+      "code_example": "@ControllerAdvice\npublic class GlobalExceptionHandler {\n    @ExceptionHandler(Exception.class)\n    public ResponseEntity<ErrorResponse> handleException(Exception ex) {\n        return ResponseEntity.status(500).body(new ErrorResponse(\"Internal error\"));\n    }\n}",
+      "related_controls": ["SI-11"],
+      "confidence": 0.8
+    },
+    {
+      "pattern_id": "ERROR-002",
+      "name": "Information Disclosure in Errors",
+      "type": "error_handling",
+      "category": "anti_pattern",
+      "description": "Exposing sensitive information in error messages",
+      "regex_patterns": [
+        "printStackTrace\\(\\)",
+        "e\\.getMessage\\(\\).*response",
+        "throw.*Exception.*password",
+        "throw.*Exception.*secret"
+      ],
+      "code_example": "// BAD: Stack trace exposure\ncatch (Exception e) {\n    e.printStackTrace();\n    return e.getMessage();\n}",
+      "related_controls": ["SI-11"],
+      "confidence": 0.8,
+      "severity": "medium"
+    },
+    {
+      "pattern_id": "PASSWORD-001",
+      "name": "Password Hashing",
+      "type": "authentication",
+      "category": "good_pattern",
+      "description": "Proper password hashing with BCrypt",
+      "regex_patterns": [
+        "BCryptPasswordEncoder",
+        "PasswordEncoder",
+        "passwordEncoder\\.encode",
+        "Argon2PasswordEncoder"
+      ],
+      "code_example": "@Bean\npublic PasswordEncoder passwordEncoder() {\n    return new BCryptPasswordEncoder();\n}",
+      "related_controls": ["IA-5", "IA-5(1)"],
+      "confidence": 0.95
+    },
+    {
+      "pattern_id": "PASSWORD-002",
+      "name": "Plain Text Password Storage",
+      "type": "authentication",
+      "category": "anti_pattern",
+      "description": "Storing passwords in plain text",
+      "regex_patterns": [
+        "setPassword\\([^e][^n][^c]",
+        "password\\s*=\\s*request\\.getParameter",
+        "user\\.setPassword\\(password\\)"
+      ],
+      "code_example": "// BAD: Plain text password\nuser.setPassword(plainPassword);",
+      "related_controls": ["IA-5"],
+      "confidence": 0.7,
+      "severity": "critical"
+    },
+    {
+      "pattern_id": "CSRF-001",
+      "name": "CSRF Protection",
+      "type": "secure_communication",
+      "category": "good_pattern",
+      "description": "CSRF protection enabled",
+      "regex_patterns": [
+        "\\.csrf\\(\\)",
+        "CsrfToken",
+        "csrf\\(\\)\\.csrfTokenRepository"
+      ],
+      "code_example": "http.csrf()\n    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());",
+      "related_controls": ["SC-7", "SI-10"],
+      "confidence": 0.85
+    },
+    {
+      "pattern_id": "CSRF-002",
+      "name": "CSRF Protection Disabled",
+      "type": "secure_communication",
+      "category": "anti_pattern",
+      "description": "CSRF protection explicitly disabled",
+      "regex_patterns": [
+        "csrf\\(\\)\\.disable\\(\\)",
+        "\\.csrf\\(\\)\\.ignoringAntMatchers"
+      ],
+      "code_example": "// BAD: CSRF disabled\nhttp.csrf().disable();",
+      "related_controls": ["SC-7"],
+      "confidence": 0.95,
+      "severity": "high"
+    },
+    {
+      "pattern_id": "CORS-001",
+      "name": "CORS Configuration",
+      "type": "secure_communication",
+      "category": "configuration",
+      "description": "CORS configuration present",
+      "regex_patterns": [
+        "@CrossOrigin",
+        "CorsConfiguration",
+        "addCorsMappings",
+        "allowedOrigins"
+      ],
+      "code_example": "@Configuration\npublic class CorsConfig implements WebMvcConfigurer {\n    @Override\n    public void addCorsMappings(CorsRegistry registry) {\n        registry.addMapping(\"/api/**\")\n            .allowedOrigins(\"https://trusted-domain.com\");\n    }\n}",
+      "related_controls": ["SC-7"],
+      "confidence": 0.8
+    },
+    {
+      "pattern_id": "DEPENDENCY-001",
+      "name": "Dependency Vulnerability Check",
+      "type": "vulnerability",
+      "category": "good_pattern",
+      "description": "OWASP Dependency Check configured",
+      "regex_patterns": [
+        "dependency-check-maven",
+        "org\\.owasp:dependency-check",
+        "dependencyCheck"
+      ],
+      "code_example": "<plugin>\n    <groupId>org.owasp</groupId>\n    <artifactId>dependency-check-maven</artifactId>\n</plugin>",
+      "related_controls": ["SI-2"],
+      "confidence": 0.9
+    },
+    {
+      "pattern_id": "MONITORING-001",
+      "name": "Application Monitoring",
+      "type": "monitoring",
+      "category": "good_pattern",
+      "description": "Monitoring and metrics configured",
+      "regex_patterns": [
+        "Micrometer",
+        "Prometheus",
+        "@Timed",
+        "@Counted",
+        "MeterRegistry"
+      ],
+      "code_example": "@Timed(value = \"api.requests\", description = \"API request duration\")\n@GetMapping(\"/api/data\")\npublic Data getData() {\n    return dataService.getData();\n}",
+      "related_controls": ["SI-4"],
+      "confidence": 0.85
+    }
+  ]
+}
