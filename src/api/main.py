@@ -32,10 +32,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     Handles startup and shutdown events.
     """
     # Startup
+    # Use ./logs for all environments - /var/log requires root permissions
     init_logging(
         app_name=settings.app_name.lower().replace(" ", "-"),
         level=settings.log_level,
-        log_dir="./logs" if not settings.is_production else "/var/log/fedramp",
+        log_dir="./logs",
         json_format=settings.is_production
     )
     
