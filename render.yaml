@@ -14,6 +14,6 @@ services:
         value: 10000
       - key: ENVIRONMENT
         value: production
-    healthCheckPath: /health
+    healthCheckPath: /api/v1/health
 
 # Made with Bob
